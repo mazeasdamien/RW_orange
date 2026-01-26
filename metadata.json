@@ -1,0 +1,5 @@
+{
+  "name": "HRI Researcher Assistant",
+  "description": "A specialized AI tool for Human-Robot Interaction researchers to analyze academic papers, extracting taxonomy, gaps, and study designs automatically using Gemini 2.5 Flash.",
+  "requestFramePermissions": []
+}
