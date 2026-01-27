@@ -12,6 +12,8 @@ export interface CategoryB {
   embodimentType: string;
   inputModality: string;
   autonomyLevel: string;
+  socialGestures: string; // NEW: Specific movements (Show, Alert, Encourage)
+  motionGeneration: string; // NEW: How motion is created (Hardcoded vs Generated)
 }
 
 export interface CategoryC {
@@ -40,6 +42,14 @@ export interface CategoryE {
 export interface PaperAnalysis {
   citationKey: string;
   title: string;
+  authors: string[];
+  journal: string;
+  year: string;
+  doi: string;
+  url?: string;
+  volume: string;
+  issue: string;
+  abstract: string;
   categoryA: CategoryA;
   categoryB: CategoryB;
   categoryC: CategoryC;
@@ -54,4 +64,5 @@ export interface AnalyzedPaper {
   data?: PaperAnalysis;
   errorMsg?: string;
   uploadDate: number;
+  isDuplicate?: boolean;
 }

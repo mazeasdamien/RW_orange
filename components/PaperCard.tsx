@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, FileText, AlertCircle, CheckCircle2, Copy } fro
 interface PaperCardProps {
   paper: AnalyzedPaper;
   onRemove: (id: string) => void;
+  onEdit: (paper: AnalyzedPaper) => void;
 }
 
 const DetailRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
@@ -23,7 +24,7 @@ const SectionBlock: React.FC<{ title: string; color: string; children: React.Rea
   </div>
 );
 
-export const PaperCard: React.FC<PaperCardProps> = ({ paper, onRemove }) => {
+export const PaperCard: React.FC<PaperCardProps> = ({ paper, onRemove, onEdit }) => {
   const [expanded, setExpanded] = useState(false);
 
   if (paper.status === 'analyzing') {
@@ -38,7 +39,7 @@ export const PaperCard: React.FC<PaperCardProps> = ({ paper, onRemove }) => {
             <div className="h-3 bg-slate-100 rounded w-24"></div>
           </div>
         </div>
-        <span className="text-sm text-indigo-600 font-medium">Analyzing with Gemini...</span>
+        <span className="text-sm text-indigo-600 font-medium">Analyzing with AI...</span>
       </div>
     );
   }
@@ -70,17 +71,22 @@ export const PaperCard: React.FC<PaperCardProps> = ({ paper, onRemove }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-md">
-      <div 
+    <div className={`bg-white rounded-xl shadow-sm border ${paper.isDuplicate ? 'border-amber-400 ring-4 ring-amber-100' : 'border-slate-200'} overflow-hidden transition-all duration-300 hover:shadow-md`}>
+      <div
         className="p-6 cursor-pointer hover:bg-slate-50 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-4">
-            <div className="bg-green-100 p-3 rounded-full text-green-700">
+            <div className={`p-3 rounded-full ${paper.isDuplicate ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-700'}`}>
               <FileText size={24} />
             </div>
             <div>
+              {paper.isDuplicate && (
+                <span className="mb-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 uppercase tracking-wide">
+                  <AlertCircle size={12} className="mr-1" /> Duplicate DOI Detected
+                </span>
+              )}
               <div className="flex items-center space-x-2 mb-1">
                 <span className="bg-slate-800 text-white text-xs font-bold px-2 py-0.5 rounded">
                   {data.citationKey}
@@ -88,13 +94,16 @@ export const PaperCard: React.FC<PaperCardProps> = ({ paper, onRemove }) => {
                 <span className="text-xs text-slate-400">
                   {new Date(paper.uploadDate).toLocaleDateString()}
                 </span>
+                {data.doi && (
+                  <span className="text-xs text-indigo-400 border border-indigo-100 px-1 rounded">DOI Found</span>
+                )}
               </div>
               <h3 className="font-bold text-lg text-slate-900 leading-tight mb-1">{data.title || paper.fileName}</h3>
               <p className="text-sm text-slate-600 line-clamp-1">{data.categoryA.coreProblem}</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-             {expanded ? <ChevronUp className="text-slate-400" /> : <ChevronDown className="text-slate-400" />}
+            {expanded ? <ChevronUp className="text-slate-400" /> : <ChevronDown className="text-slate-400" />}
           </div>
         </div>
       </div>
@@ -102,13 +111,19 @@ export const PaperCard: React.FC<PaperCardProps> = ({ paper, onRemove }) => {
       {expanded && (
         <div className="p-6 pt-0 border-t border-slate-100 bg-slate-50/50">
           <div className="flex justify-end mb-4 pt-4">
-            <button 
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(paper); }}
+              className="flex items-center space-x-1 text-xs font-medium text-slate-500 hover:text-indigo-600 mr-4"
+            >
+              <span>Edit Metadata</span>
+            </button>
+            <button
               onClick={(e) => { e.stopPropagation(); copyToClipboard(); }}
               className="flex items-center space-x-1 text-xs font-medium text-slate-500 hover:text-indigo-600 mr-4"
             >
               <Copy size={14} /> <span>Copy JSON</span>
             </button>
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); onRemove(paper.id); }}
               className="text-xs font-medium text-red-500 hover:text-red-700"
             >
