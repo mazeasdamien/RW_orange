@@ -35,11 +35,16 @@ export const PaperCard: React.FC<PaperCardProps> = ({ paper, onRemove, onEdit })
             <div className="h-6 w-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
           <div>
-            <div className="h-4 bg-slate-200 rounded w-48 mb-2"></div>
-            <div className="h-3 bg-slate-100 rounded w-24"></div>
+            <p className="font-semibold text-slate-700">{paper.fileName}</p>
+            <p className="text-sm text-indigo-600 font-medium">Analyzing with AI...</p>
           </div>
         </div>
-        <span className="text-sm text-indigo-600 font-medium">Analyzing with AI...</span>
+        <button
+          onClick={() => onRemove(paper.id)}
+          className="text-slate-500 hover:text-red-600 text-sm font-medium px-3 py-1 hover:bg-red-50 rounded transition-colors"
+        >
+          Cancel
+        </button>
       </div>
     );
   }

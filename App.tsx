@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Upload, Download, BookOpen, Sparkles, Github, Database, LayoutDashboard, FileText } from 'lucide-react';
+import { Upload, Download, BookOpen, Sparkles, Github, Database, LayoutDashboard, FileText, Settings } from 'lucide-react';
 import { PaperCard } from './components/PaperCard';
 import { AnalyzedPaper, PaperAnalysis } from './types';
 import { analyzePaper } from './services/aiService';
@@ -10,6 +10,7 @@ import { MetadataEditor } from './components/MetadataEditor';
 import { DashboardView } from './components/DashboardView';
 import { TaxonomyGenerator } from './components/TaxonomyGenerator';
 import { RelevanceChecker } from './components/RelevanceChecker';
+import { AISettingsPanel } from './components/AISettingsPanel';
 
 const App: React.FC = () => {
   // Initialize state from localStorage if available
@@ -23,9 +24,10 @@ const App: React.FC = () => {
     }
   });
   const [isDragOver, setIsDragOver] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'matrix' | 'dashboard' | 'taxonomy'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'dashboard' | 'taxonomy'>('list');
   const [editingPaper, setEditingPaper] = useState<AnalyzedPaper | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Persist papers to localStorage whenever they change
   React.useEffect(() => {
@@ -259,10 +261,22 @@ const App: React.FC = () => {
                 <BookOpen className="text-white" size={24} />
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-white leading-tight">HRI Assistant</h1>
-                <div className="flex items-center space-x-1.5 text-xs text-indigo-300 font-medium">
-                  <Sparkles size={12} />
-                  <span>Claude 4.5 Sonnet</span>
+                <h1 className="text-xl font-bold tracking-tight text-white leading-tight">Literature Review Assistant</h1>
+                <div className="flex items-center gap-3 text-xs font-medium">
+                  <div className="flex items-center space-x-1.5 text-indigo-300">
+                    <Sparkles size={12} />
+                    <span>
+                      {(() => {
+                        const settings = localStorage.getItem('aiSettings');
+                        const config = settings ? JSON.parse(settings) : { provider: 'claude' };
+                        return config.provider === 'gemini' ? 'Gemini 3 Flash Preview' : 'Claude 4 Sonnet';
+                      })()}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-1.5 text-slate-400">
+                    <Database size={12} />
+                    <span>{papers.length} papers</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -281,15 +295,7 @@ const App: React.FC = () => {
                 >
                   List
                 </button>
-                <button
-                  onClick={() => setViewMode('matrix')}
-                  className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${viewMode === 'matrix'
-                    ? 'bg-slate-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                >
-                  Matrix
-                </button>
+
                 <button
                   onClick={() => setViewMode('dashboard')}
                   className={`px-3 py-1.5 rounded text-xs font-bold transition-all flex items-center gap-1 ${viewMode === 'dashboard'
@@ -312,19 +318,7 @@ const App: React.FC = () => {
                 </button>
               </div>
 
-              {/* Stats - Hidden on small screens */}
-              <div className="hidden md:flex items-center space-x-6 mr-2 border-r border-slate-700 pr-6">
-                <div className="text-right">
-                  <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Papers</div>
-                  <div className="text-lg font-bold leading-none">{papers.length}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Done</div>
-                  <div className="text-lg font-bold leading-none text-green-400">
-                    {papers.filter(p => p.status === 'complete').length}
-                  </div>
-                </div>
-              </div>
+
 
               {/* Exports */}
               <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
@@ -350,35 +344,17 @@ const App: React.FC = () => {
                 >
                   RIS
                 </button>
-
-                <div className="w-px h-4 bg-slate-700 mx-2"></div>
-
-                <button
-                  onClick={handleBackup}
-                  disabled={papers.length === 0}
-                  className="px-3 py-1.5 rounded text-xs font-bold text-indigo-300 hover:bg-indigo-900/50 hover:text-indigo-200 transition-colors flex items-center space-x-1 disabled:opacity-30"
-                  title="Save Backup File"
-                >
-                  <Download size={14} />
-                  <span>Save</span>
-                </button>
-
-                <button
-                  onClick={handleImportJSON}
-                  className="px-3 py-1.5 rounded text-xs font-bold text-indigo-300 hover:bg-indigo-900/50 hover:text-indigo-200 transition-colors flex items-center space-x-1"
-                  title="Restore Backup"
-                >
-                  <Database size={14} />
-                  <span>Import</span>
-                </button>
-                <input
-                  id="json-upload"
-                  type="file"
-                  accept=".json"
-                  className="hidden"
-                  onChange={handleJsonUpload}
-                />
               </div>
+
+              {/* Settings Button */}
+              <button
+                onClick={() => setShowSettings(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded text-xs font-bold bg-slate-700 text-slate-200 hover:bg-slate-600 transition-all"
+                title="AI Model Settings"
+              >
+                <Settings size={14} />
+                <span className="hidden sm:inline">Settings</span>
+              </button>
 
               {/* Upload Button */}
               <label className="group relative bg-indigo-600 hover:bg-indigo-500 text-white pl-4 pr-5 py-2.5 rounded-lg cursor-pointer flex items-center space-x-2 transition-all shadow-md hover:shadow-indigo-500/25 active:scale-95">
@@ -447,7 +423,6 @@ const App: React.FC = () => {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between pb-4 border-b border-slate-200/60 mb-2">
                     <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Your Analysis Stream</h2>
-                    <span className="text-xs text-slate-400">{papers.length} documents</span>
                   </div>
                   {papers.map(paper => (
                     <PaperCard
@@ -460,15 +435,7 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {viewMode === 'matrix' && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-200/60 mb-2">
-                    <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Matrix Comparison</h2>
-                    <span className="text-xs text-slate-400">Comparing {papers.filter(p => p.status === 'complete').length} papers</span>
-                  </div>
-                  <MatrixView papers={papers} onEdit={handleEdit} />
-                </div>
-              )}
+
 
               {viewMode === 'dashboard' && (
                 <DashboardView papers={papers} />
@@ -488,6 +455,11 @@ const App: React.FC = () => {
           onAccept={handleAcceptPaper}
           onReject={handleRejectPaper}
         />
+      )}
+
+      {/* AI Settings Modal */}
+      {showSettings && (
+        <AISettingsPanel onClose={() => setShowSettings(false)} />
       )}
     </div>
   );

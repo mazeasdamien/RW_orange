@@ -122,13 +122,47 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({ paper, onSave, o
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Authors (comma separated)</label>
-                        <input
-                            type="text"
-                            value={formData.authors?.join(', ') || ''}
-                            onChange={e => handleAuthorsChange(e.target.value)}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                        />
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Authors</label>
+                        <div className="border border-slate-300 rounded-lg p-3 space-y-2 bg-white">
+                            {/* Display existing authors as tags */}
+                            <div className="flex flex-wrap gap-2">
+                                {formData.authors?.map((author, idx) => (
+                                    <div key={idx} className="flex items-center gap-1 bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium border border-indigo-200">
+                                        <span>{author}</span>
+                                        <button
+                                            onClick={() => {
+                                                const newAuthors = formData.authors.filter((_, i) => i !== idx);
+                                                setFormData(prev => ({ ...prev, authors: newAuthors }));
+                                            }}
+                                            className="ml-1 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-200 rounded-full p-0.5"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Input to add new author */}
+                            <input
+                                type="text"
+                                placeholder="Add author (LastName, FirstName) - press Enter"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        const newAuthor = e.currentTarget.value.trim();
+                                        if (newAuthor) {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                authors: [...(prev.authors || []), newAuthor]
+                                            }));
+                                            e.currentTarget.value = '';
+                                        }
+                                    }
+                                }}
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                            />
+                            <p className="text-xs text-slate-500">Format: LastName, FirstName (e.g., "Smith, John")</p>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
