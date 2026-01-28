@@ -11,7 +11,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 
 // AI Configuration
 const ORANGE_API_BASE = "https://llmproxy.ai.orange/v1";
-const CLAUDE_MODEL = "vertex_ai/claude-3-5-sonnet";
+const CLAUDE_MODEL = "vertex_ai/claude4-sonnet";
 const GEMINI_MODEL = "gemini-3-flash-preview";
 
 // Unified AI call function
