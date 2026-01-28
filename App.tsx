@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Upload, Download, BookOpen, Sparkles, Github, Database, LayoutDashboard, FileText, Settings } from 'lucide-react';
+import { Upload, Download, BookOpen, Sparkles, Github, Database, LayoutDashboard, FileText, Settings, Target, Tag, Layers, Cpu } from 'lucide-react';
 import { PaperCard } from './components/PaperCard';
 import { AnalyzedPaper, PaperAnalysis } from './types';
 import { analyzePaper } from './services/aiService';
@@ -28,6 +28,24 @@ const App: React.FC = () => {
   const [editingPaper, setEditingPaper] = useState<AnalyzedPaper | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('aiSettings');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  // Listener for settings changes that happens in the settings panel
+  React.useEffect(() => {
+    const handleSettingsUpdate = () => {
+      const saved = localStorage.getItem('aiSettings');
+      if (saved) setSettings(JSON.parse(saved));
+    };
+    window.addEventListener('settingsChanged', handleSettingsUpdate);
+    return () => window.removeEventListener('settingsChanged', handleSettingsUpdate);
+  }, []);
 
   // Persist papers to localStorage whenever they change
   React.useEffect(() => {
@@ -403,6 +421,78 @@ const App: React.FC = () => {
         )}
 
         <div className="mx-auto max-w-[98%]">
+          {/* Active Project Banner */}
+          {settings && (
+            <div className="mb-8 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex flex-col md:flex-row">
+              <div className="flex-1 p-6 md:p-8 border-b md:border-b-0 md:border-r border-slate-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded uppercase tracking-wider">Active Research Context</span>
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-3 leading-tight">{settings.projectTitle}</h2>
+                <p className="text-sm text-slate-500 mb-6 italic line-clamp-3 leading-relaxed">
+                  "{settings.projectDescription}"
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {settings.researchFocus?.split(',').map((tag: string, i: number) => {
+                    const trimmed = tag.trim();
+                    if (!trimmed) return null;
+                    return (
+                      <span key={i} className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-slate-600 text-[10px] font-bold rounded-md border border-slate-200 uppercase tracking-tight">
+                        <Tag size={10} className="text-slate-400" />
+                        {trimmed}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="w-full md:w-64 bg-slate-50/50 p-6 md:p-8 flex flex-col justify-center border-t md:border-t-0 border-slate-100">
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Target Venue</div>
+                    <div className="flex items-center gap-2 text-slate-900 font-bold">
+                      <BookOpen size={16} className="text-indigo-500" />
+                      {settings.conferenceTarget || 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Citation Goal</div>
+                    <div className="flex items-center gap-2 text-slate-900 font-bold text-xl">
+                      <Target size={20} className="text-indigo-500" />
+                      {settings.citationGoal || 70}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">AI Provider</div>
+                    <div className="flex items-center gap-2 text-slate-900 font-bold">
+                      <Cpu size={16} className="text-indigo-500" />
+                      <span className="capitalize">{settings.provider || 'Claude'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Paper Structure Summary */}
+          {settings && settings.paperSections && (
+            <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {settings.paperSections.split('\n').map((line: string, i: number) => {
+                const match = line.match(/^(\d+\..+?)\s*\((\d+)\s+papers?\)\s*:\s*(.*)$/);
+                if (!match) return null;
+                const [, title, count, desc] = match;
+                return (
+                  <div key={i} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{count} PAPERS TARGET</span>
+                      <Layers size={14} className="text-slate-300" />
+                    </div>
+                    <div className="text-xs font-bold text-slate-900 mb-1 truncate">{title}</div>
+                    <div className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">{desc}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           {papers.length === 0 ? (
             <div className="mt-20 flex flex-col items-center justify-center text-center">
               <div className="bg-white p-12 rounded-3xl shadow-sm border border-slate-200 max-w-lg w-full">
