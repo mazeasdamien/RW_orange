@@ -155,10 +155,25 @@ export const AISettingsPanel: React.FC<AISettingsPanelProps> = ({ onClose }) => 
                                     value={settings.researchFocus}
                                     onChange={(e) => setSettings({ ...settings, researchFocus: e.target.value })}
                                     placeholder="e.g., VLM, robotics, teleoperation, HRI..."
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-slate-800"
                                 />
-                                <p className="text-xs text-slate-500 mt-1">
-                                    These keywords tune the AI to find relevant papers for your research
+                                <div className="mt-3 flex flex-wrap gap-1.5 p-3 bg-slate-50 rounded-lg border border-slate-100 min-h-[44px]">
+                                    {settings.researchFocus ? (
+                                        settings.researchFocus.split(',').map((tag, i) => {
+                                            const trimmed = tag.trim();
+                                            if (!trimmed) return null;
+                                            return (
+                                                <span key={i} className="px-2.5 py-1 bg-white text-indigo-700 text-[10px] font-bold rounded-md border border-indigo-100 shadow-sm uppercase tracking-wider">
+                                                    {trimmed}
+                                                </span>
+                                            );
+                                        })
+                                    ) : (
+                                        <span className="text-[11px] text-slate-400 italic">No keywords added yet...</span>
+                                    )}
+                                </div>
+                                <p className="text-[11px] text-slate-400 mt-2 italic px-1">
+                                    AI uses these keywords to detect research gaps and generate targeted search queries.
                                 </p>
                             </div>
 
@@ -193,12 +208,36 @@ export const AISettingsPanel: React.FC<AISettingsPanelProps> = ({ onClose }) => 
                                 <textarea
                                     value={settings.paperSections}
                                     onChange={(e) => setSettings({ ...settings, paperSections: e.target.value })}
-                                    placeholder="List your paper sections with citation targets..."
+                                    placeholder="List your paper sections with citation targets, e.g.:\n1. Intro (15 papers): history of..."
                                     rows={5}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-xs"
+                                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-xs transition-all bg-slate-50/30"
                                 />
-                                <p className="text-xs text-slate-500 mt-1">
-                                    Define your paper sections and what each should cover
+                                <div className="mt-3 space-y-2">
+                                    {settings.paperSections ? (
+                                        settings.paperSections.split('\n').map((line, i) => {
+                                            const match = line.match(/^(\d+\..+?)\s*\((\d+)\s+papers?\)\s*:\s*(.*)$/);
+                                            if (!match) return null;
+                                            const [, title, count, desc] = match;
+                                            return (
+                                                <div key={i} className="flex items-start gap-3 p-3 bg-indigo-50/50 rounded-lg border border-indigo-100/50">
+                                                    <div className="shrink-0 w-10 h-10 bg-white rounded-md border border-indigo-200 flex items-center justify-center font-bold text-indigo-700 shadow-sm">
+                                                        {count}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-xs font-bold text-slate-900 truncate">{title}</div>
+                                                        <div className="text-[10px] text-slate-500 line-clamp-2 mt-0.5">{desc}</div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="p-4 bg-slate-50 rounded-lg border border-dashed border-slate-200 text-center text-[11px] text-slate-400 italic">
+                                            Follow the format: 1. Section (X papers): Description
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-[11px] text-slate-400 mt-2 italic px-1">
+                                    Dashboard targets are automatically updated from these numbers.
                                 </p>
                             </div>
                         </div>

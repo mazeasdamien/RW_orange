@@ -11,7 +11,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 
 // AI Configuration
 const ORANGE_API_BASE = "https://llmproxy.ai.orange/v1";
-const CLAUDE_MODEL = "vertex_ai/claude4-sonnet";
+const CLAUDE_MODEL = "vertex_ai/claude-3-5-sonnet";
 const GEMINI_MODEL = "gemini-3-flash-preview";
 
 // Unified AI call function
@@ -29,10 +29,10 @@ async function callAI(
 
   if (config.provider === 'gemini' && config.geminiApiKey) {
     // Use Google's native SDK
-    console.log(`🤖 Using Gemini 3 Flash Preview via Google Native SDK (Mode: ${responseMimeType})`);
+    console.log(`🤖 Using ${GEMINI_MODEL} via Google Native SDK (Mode: ${responseMimeType})`);
     const genAI = new GoogleGenerativeAI(config.geminiApiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",
+      model: GEMINI_MODEL,
       generationConfig: {
         temperature: 0.3,
         responseMimeType: responseMimeType,
@@ -97,6 +97,13 @@ async function extractTextFromPdf(file: File): Promise<string> {
     fullText += pageText + "\n";
   }
 
+  console.log(`📄 Extracted ${fullText.length} characters from PDF.`);
+  console.log(`📄 Text Preview: ${fullText.substring(0, 500)}...`);
+
+  if (fullText.trim().length < 100) {
+    throw new Error("Unable to extract sufficient text from this PDF. It might be a scanned image or encrypted. Please ensure the PDF has selectable text.");
+  }
+
   return fullText;
 }
 
@@ -136,8 +143,16 @@ async function enrichWithCrossRef(
 
     // If we found CrossRef data, enrich the analysis
     if (crossRefData) {
+      console.log("✅ CrossRef found data:", crossRefData.title?.[0]);
+
+      const enrichedAuthors = (crossRefData.author && crossRefData.author.length > 0)
+        ? crossRefData.author.map((a: any) => `${a.family || ""}, ${a.given || ""}`)
+        : analysis.authors;
+
       return {
         ...analysis,
+        title: crossRefData.title?.[0] || analysis.title,
+        authors: enrichedAuthors,
         doi: crossRefData.DOI || analysis.doi,
         url: crossRefData.DOI ? `https://doi.org/${crossRefData.DOI}` : analysis.url,
         journal: crossRefData['container-title']?.[0] || analysis.journal,
@@ -234,6 +249,7 @@ Paper text:
 ${fullText}`;
 
   try {
+    console.log("🚀 Sending prompt to AI...");
     const text = await callAI(userPrompt, systemPrompt);
     if (!text) {
       throw new Error("No response text from AI Provider");
@@ -241,9 +257,66 @@ ${fullText}`;
 
     // Strip markdown code blocks if present (```json ... ```)
     const cleanedText = text.replace(/```json\s*|\s*```/g, '').trim();
+    console.log("🤖 Raw AI JSON:", cleanedText);
 
-    const initialAnalysis: PaperAnalysis = JSON.parse(cleanedText);
-    const finalAnalysis = await enrichWithCrossRef(initialAnalysis);
+    let initialAnalysis: any;
+    try {
+      initialAnalysis = JSON.parse(cleanedText);
+    } catch (e) {
+      console.error("JSON Parse Failed", e);
+      throw new Error("AI returned invalid JSON. Check console for raw output.");
+    }
+
+    // DEEP VALIDATION: Explicitly map every field to ensure structure matches UI expectations
+    const safeAnalysis: PaperAnalysis = {
+      citationKey: initialAnalysis.citationKey || "Unknown",
+      title: initialAnalysis.title || "Untitled Paper",
+      authors: Array.isArray(initialAnalysis.authors) ? initialAnalysis.authors : [],
+      journal: initialAnalysis.journal || "",
+      year: initialAnalysis.year || "",
+      doi: initialAnalysis.doi || "",
+      volume: initialAnalysis.volume || "",
+      issue: initialAnalysis.issue || "",
+      url: initialAnalysis.url || "",
+      abstract: initialAnalysis.abstract || "",
+
+      categoryA: {
+        coreProblem: initialAnalysis.categoryA?.coreProblem || "",
+        theVillain: initialAnalysis.categoryA?.theVillain || "",
+        gapClaim: initialAnalysis.categoryA?.gapClaim || "",
+        keyDefinitions: initialAnalysis.categoryA?.keyDefinitions || ""
+      },
+      categoryB: {
+        interactionParadigm: initialAnalysis.categoryB?.interactionParadigm || "",
+        embodimentType: initialAnalysis.categoryB?.embodimentType || "",
+        inputModality: initialAnalysis.categoryB?.inputModality || "",
+        autonomyLevel: initialAnalysis.categoryB?.autonomyLevel || "",
+        socialGestures: initialAnalysis.categoryB?.socialGestures || "",
+        motionGeneration: initialAnalysis.categoryB?.motionGeneration || ""
+      },
+      categoryC: {
+        algorithmModel: initialAnalysis.categoryC?.algorithmModel || "",
+        hardwareSpecs: initialAnalysis.categoryC?.hardwareSpecs || "",
+        latencyPerformance: initialAnalysis.categoryC?.latencyPerformance || "",
+        safetyMechanisms: initialAnalysis.categoryC?.safetyMechanisms || ""
+      },
+      categoryD: {
+        studyDesign: initialAnalysis.categoryD?.studyDesign || "",
+        sampleSize: initialAnalysis.categoryD?.sampleSize || "",
+        taskDescription: initialAnalysis.categoryD?.taskDescription || "",
+        independentVariables: initialAnalysis.categoryD?.independentVariables || "",
+        dependentVariables: initialAnalysis.categoryD?.dependentVariables || ""
+      },
+      categoryE: {
+        keyFinding: initialAnalysis.categoryE?.keyFinding || "",
+        unexpectedResults: initialAnalysis.categoryE?.unexpectedResults || "",
+        limitations: initialAnalysis.categoryE?.limitations || "",
+        futureWork: initialAnalysis.categoryE?.futureWork || "",
+        relevanceToTelementoring: initialAnalysis.categoryE?.relevanceToTelementoring || ""
+      }
+    };
+
+    const finalAnalysis = await enrichWithCrossRef(safeAnalysis);
 
     return finalAnalysis;
   } catch (error) {
@@ -513,10 +586,25 @@ IMPORTANT:
     }
 
     const cleanedText = text.replace(/```json\s*|\s*```/g, '').trim();
-    const result = JSON.parse(cleanedText);
+    console.log("🤖 Raw Strategy JSON:", cleanedText);
+
+    let result: any;
+    try {
+      result = JSON.parse(cleanedText);
+    } catch (e) {
+      console.error("Strategy JSON Parse Failed", e);
+      throw new Error(`AI returned invalid strategy JSON: ${e instanceof Error ? e.message : "Parse Error"}`);
+    }
 
     // Handle both array and object with "recommendations" key
-    return Array.isArray(result) ? result : result.recommendations || [];
+    const rawList = Array.isArray(result) ? result : (result.recommendations || []);
+
+    // Validate and clean structure
+    return rawList.map((rec: any) => ({
+      section: rec.section || "General",
+      gap: rec.gap || "Gap analysis in progress",
+      searchQueries: Array.isArray(rec.searchQueries) ? rec.searchQueries : []
+    }));
   } catch (error) {
     console.error("Strategy Generation Error:", error);
     throw error;

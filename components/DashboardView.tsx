@@ -229,25 +229,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ papers }) => {
                             <div className="text-4xl font-bold text-indigo-600">{citationGoal}</div>
                             <div className="text-xs text-slate-500 uppercase tracking-wide">Total Target</div>
                         </div>
-                        <button
-                            onClick={() => {
-                                console.log('🔄 Refresh button clicked');
-                                const settings = localStorage.getItem('aiSettings');
-                                console.log('🔄 Settings from localStorage:', settings);
-                                const config = settings ? JSON.parse(settings) : { citationGoal: 70 };
-                                console.log('🔄 Parsed config:', config);
-                                const newGoal = config.citationGoal || 70;
-                                console.log('🔄 New citation goal:', newGoal);
-                                console.log('🔄 Current citation goal state:', citationGoal);
-                                setCitationGoal(newGoal);
-                                // Force re-render
-                                setRefreshKey(prev => prev + 1);
-                            }}
-                            className="p-2 bg-white rounded-lg hover:bg-indigo-100 transition-colors border border-indigo-200"
-                            title="Refresh goals from settings"
-                        >
-                            <RefreshCw size={20} className="text-indigo-600" />
-                        </button>
                     </div>
                 </div>
                 <div className="mt-4 grid grid-cols-4 gap-3">

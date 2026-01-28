@@ -321,7 +321,8 @@ const App: React.FC = () => {
 
 
               {/* Exports */}
-              <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
+              <div className="flex items-center bg-slate-800 rounded-lg p-1 border border-slate-700">
+                <span className="text-[10px] font-bold text-slate-500 px-2 uppercase tracking-tight">Export</span>
                 <button
                   onClick={handleExportCSV}
                   disabled={papers.filter(p => p.status === 'complete').length === 0}
@@ -401,7 +402,7 @@ const App: React.FC = () => {
           />
         )}
 
-        <div className={`mx-auto ${viewMode === 'matrix' ? 'max-w-[95%]' : 'max-w-[95%]'}`}>
+        <div className="mx-auto max-w-[98%]">
           {papers.length === 0 ? (
             <div className="mt-20 flex flex-col items-center justify-center text-center">
               <div className="bg-white p-12 rounded-3xl shadow-sm border border-slate-200 max-w-lg w-full">
